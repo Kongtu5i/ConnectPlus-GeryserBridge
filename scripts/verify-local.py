@@ -45,9 +45,6 @@ def main():
     actual = {Path(entry).name: hashlib.sha256(Path(entry).read_bytes()).hexdigest() for entry in host}
     if len(actual) != len(host) or actual != expected:
         raise RuntimeError("Host dependencies differ from the locked checksums")
-    via_proxy_hash = hashlib.sha256((ROOT / "mock-connectplus/libs/ViaProxy-3.4.13.jar").read_bytes()).hexdigest()
-    if via_proxy_hash != (ROOT / "gradle/viaproxy-sha256.txt").read_text().strip():
-        raise RuntimeError("ViaProxy compile dependency differs from the locked release")
     work = ROOT / "build/verification/local" / uuid.uuid4().hex[:12]
     driver = work / "driver"
     driver.mkdir(parents=True, exist_ok=True)
@@ -76,11 +73,7 @@ def main():
     run(["java", "-Dfile.encoding=UTF-8", "-cp", os.pathsep.join(tests + [str(artifact), str(test_jar)]),
          "TestRunner", str(work / "test-summary.json")] + selectors)
     (work.parent / "test-summary.json").write_bytes((work / "test-summary.json").read_bytes())
-    mock = ROOT / "mock-connectplus"
-    mock_classes = compile_sources("mock", sorted((mock / "src/main/java").rglob("*.java")),
-                                   [mock / "libs/ViaProxy-3.4.13.jar"], 17)
-    pack(mock_classes, mock / "build/libs/mock-ConnectPlus-1.0.0.jar", mock / "src/main/resources")
-    print("PASS: main and mock compilation, extension packaging and all project JUnit tests")
+    print("PASS: extension compilation, packaging and all project JUnit tests")
 
 
 if __name__ == "__main__":

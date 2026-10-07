@@ -6,16 +6,7 @@
 
 ## 构建
 
-需要 Java 21 或更高版本。ConnectPlus 编译目标仍是 Java 17。
-
-首次检出源码时，先下载未修改的官方 ViaProxy 编译依赖（仅用于开发 mock，不打入扩展）：
-
-```powershell
-New-Item -ItemType Directory -Force mock-connectplus/libs | Out-Null
-Invoke-WebRequest -Uri 'https://github.com/ViaVersion/ViaProxy/releases/download/v3.4.13/ViaProxy-3.4.13.jar' -OutFile mock-connectplus/libs/ViaProxy-3.4.13.jar
-```
-
-构建会与 `gradle/viaproxy-sha256.txt` 校验下载文件。再执行：
+需要 Java 21 或更高版本。依赖由 Gradle 下载，无需准备本地 ViaProxy JAR。
 
 ```powershell
 .\gradlew.bat jar test exportVerificationClasspath
@@ -39,7 +30,7 @@ ViaProxy/
 
 ConnectPlus：`mode: lobby`、`geyser-support.enabled: true`、`allowAccountLogin: true`。
 Geyser：启用 `advanced.bedrock.validate-bedrock-login`，关闭 `use-waterdogpe-forwarding`，认证类型不得为 FLOODGATE。
-本地官方验收包默认 Java TCP 25571、基岩 UDP 19133；自行安装时以宿主配置为准。首次启动需等待 Minecraft 素材下载完成。
+连接端口以宿主配置为准。首次启动需等待 Minecraft 素材下载完成。
 
 ## 能力与兼容性
 
@@ -53,8 +44,10 @@ Geyser：启用 `advanced.bedrock.validate-bedrock-login`，关闭 `use-waterdog
 
 ## 验证
 
-桥接 JUnit 覆盖版本判断、XUID、地址、会话索引和请求处理；真实 ConnectPlus 的完整测试另行执行。官方宿主启动检查验证扩展加载、三项能力注册、Java TCP 入口、基岩 RakNet UDP 响应、素材加载和正常关闭。
+桥接的 36 项 JUnit 测试覆盖版本判断、XUID、地址、会话索引和请求处理。此前官方宿主启动检查已验证扩展加载、三项能力注册、Java TCP 入口、基岩 RakNet UDP 响应、素材加载和正常关闭。
 
-本地官方验收包为 `build/acceptance/ConnectPlus-Bedrock-Acceptance-Official.zip`，不随源码上传。真人验收记录在包内 `真人验收记录.md`，自动检查不会代填真人通过结果。`mock-connectplus` 仅用于开发，不进入正式安装包。
+真实 ConnectPlus 全量测试及真人客户端验收需分别记录。自动检查不能代替真人验收；当前真人客户端验收尚未完成。
 
-GitHub 上传范围、检查结果及发布步骤见 [发布说明](docs/releasing.md)。项目目前未声明源码许可证。
+源码仓库保留正式扩展、单元测试、构建工具和协议文档。安装时只需真实 ConnectPlus、官方 Geyser-ViaProxy 和本扩展，无需模拟插件。
+
+项目目前未声明源码许可证。

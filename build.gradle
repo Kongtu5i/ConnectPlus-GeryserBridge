@@ -29,19 +29,8 @@ repositories {
 }
 
 // The complete JAR set and its hashes pin changing SNAPSHOT dependencies too.
-def verifyViaProxyDependency = tasks.register('verifyViaProxyDependency') {
-    description = 'Verify the ViaProxy release used to compile the mock plugin.'
-    doLast {
-        def dependency = file('mock-connectplus/libs/ViaProxy-3.4.13.jar')
-        def actual = java.security.MessageDigest.getInstance('SHA-256').digest(dependency.bytes).encodeHex().toString()
-        if (actual != file('gradle/viaproxy-sha256.txt').text.trim()) throw new GradleException('ViaProxy compile dependency differs from the locked release.')
-        println 'Verified ViaProxy 3.4.13'
-    }
-}
-
 def verifyHostDependencies = tasks.register('verifyHostDependencies') {
     description = 'Reject changed host dependency bytes, including mutable SNAPSHOT artifacts.'
-    dependsOn verifyViaProxyDependency
     doLast {
         def expected = new groovy.json.JsonSlurper().parse(file('gradle/host-dependency-sha256.json'))
         def jars = configurations.compileClasspath.files.findAll { it.name.endsWith('.jar') }
@@ -57,12 +46,6 @@ def verifyHostDependencies = tasks.register('verifyHostDependencies') {
 
 tasks.withType(JavaCompile).configureEach {
     dependsOn verifyHostDependencies
-}
-
-project(':mock-connectplus') {
-    tasks.withType(JavaCompile).configureEach {
-        dependsOn rootProject.tasks.named('verifyViaProxyDependency')
-    }
 }
 
 dependencies {
@@ -109,10 +92,4 @@ test {
     // Keep diagnostics and source/resource decoding consistent on Windows.
     jvmArgs "-Dfile.encoding=UTF-8", "-Dsun.jnu.encoding=UTF-8"
     systemProperty "file.encoding", "UTF-8"
-}
-
-// 为可重复构建生成 Gradle Wrapper：gradle wrapper --gradle-version 8.14.3
-tasks.register('installWrapper', Wrapper) {
-    gradleVersion = '8.14.3'
-    distributionType = Wrapper.DistributionType.BIN
 }

@@ -1,7 +1,15 @@
 # Build outputs and local dependency caches
 .gradle/
 **/build/
-mock-connectplus/libs/
+
+# Local development helpers and historical notes, excluded from the public repository
+/mock-connectplus/
+/docs/superpowers/
+/docs/releases/
+/docs/releasing.md
+/scripts/build-official-acceptance.py
+/scripts/test_official_acceptance.py
+/gradle/viaproxy-sha256.txt
 
 # Retired host-patch workspace; never publish or use it
 /geyser-patch/
