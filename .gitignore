@@ -1,0 +1,30 @@
+# Build outputs and local dependency caches
+.gradle/
+**/build/
+mock-connectplus/libs/
+
+# Retired host-patch workspace; never publish or use it
+/geyser-patch/
+
+# Local tools and editor state
+.idea/
+.vscode/
+*.iml
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+
+# Runtime data and credentials
+/run/
+/logs/
+*.log
+.env
+.env.*
+!.env.example
+secret.key
+accounts.json
+identity-links.json
+*.pem
+*.p12
+*.jks
