@@ -1,0 +1,118 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'dev.connectplus'
+version = '1.0.1'
+description = 'ConnectPlus-GeyserBridge: trusted Bedrock identity bridge for ConnectPlus on Geyser-ViaProxy'
+
+// 与宿主进程同 JVM 运行。Geyser 2.11.x / ViaProxy 3.4.13 时代基线为 Java 21。
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+def geyserVersion = '2.11.3-SNAPSHOT'
+def mcprotocollibVersion = '26.2-SNAPSHOT'
+def bedrockConnectionVersion = '3.0.0.Beta14-SNAPSHOT'
+def nettyVersion = '4.2.4.Final'
+
+repositories {
+    // Geyser api/core 与 mcprotocollib、bedrock-connection 快照
+    maven { url = 'https://repo.opencollab.dev/main/' }
+    mavenCentral()
+}
+
+// The complete JAR set and its hashes pin changing SNAPSHOT dependencies too.
+def verifyViaProxyDependency = tasks.register('verifyViaProxyDependency') {
+    description = 'Verify the ViaProxy release used to compile the mock plugin.'
+    doLast {
+        def dependency = file('mock-connectplus/libs/ViaProxy-3.4.13.jar')
+        def actual = java.security.MessageDigest.getInstance('SHA-256').digest(dependency.bytes).encodeHex().toString()
+        if (actual != file('gradle/viaproxy-sha256.txt').text.trim()) throw new GradleException('ViaProxy compile dependency differs from the locked release.')
+        println 'Verified ViaProxy 3.4.13'
+    }
+}
+
+def verifyHostDependencies = tasks.register('verifyHostDependencies') {
+    description = 'Reject changed host dependency bytes, including mutable SNAPSHOT artifacts.'
+    dependsOn verifyViaProxyDependency
+    doLast {
+        def expected = new groovy.json.JsonSlurper().parse(file('gradle/host-dependency-sha256.json'))
+        def jars = configurations.compileClasspath.files.findAll { it.name.endsWith('.jar') }
+        def actual = [:]
+        jars.each { dependency ->
+            if (actual.containsKey(dependency.name)) throw new GradleException("Ambiguous dependency filename: ${dependency.name}")
+            actual[dependency.name] = java.security.MessageDigest.getInstance('SHA-256').digest(dependency.bytes).encodeHex().toString()
+        }
+        if (actual != expected) throw new GradleException('Host dependencies differ from the locked checksums; review the runtime baseline before updating them.')
+        println "Verified ${actual.size()} host artifacts"
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn verifyHostDependencies
+}
+
+project(':mock-connectplus') {
+    tasks.withType(JavaCompile).configureEach {
+        dependsOn rootProject.tasks.named('verifyViaProxyDependency')
+    }
+}
+
+dependencies {
+    // 宿主依赖一律 compileOnly，绝不打包进扩展 JAR（协议第 4 节）。
+    compileOnly "org.geysermc.geyser:api:${geyserVersion}"
+    compileOnly "org.geysermc.geyser:core:${geyserVersion}"
+    compileOnly "org.geysermc.mcprotocollib:protocol:${mcprotocollibVersion}"
+    compileOnly "org.cloudburstmc.protocol:bedrock-connection:${bedrockConnectionVersion}"
+    compileOnly "io.netty:netty-transport:${nettyVersion}"
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation "io.netty:netty-transport:${nettyVersion}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+jar {
+    // 宿主类绝不进入扩展 JAR。
+    excludes = ['org/geysermc/**']
+}
+
+tasks.register('exportVerificationClasspath') {
+    description = 'Export the real host dependencies for extension and JUnit verification.'
+    dependsOn verifyHostDependencies
+    doLast {
+        def destination = layout.buildDirectory.file('verification/host-classpath.json').get().asFile
+        destination.parentFile.mkdirs()
+        destination.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(
+                configurations.compileClasspath.files.findAll { it.name.endsWith('.jar') }.collect { it.absolutePath }))
+        def tests = layout.buildDirectory.file('verification/test-classpath.json').get().asFile
+        tests.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(
+                (configurations.testRuntimeClasspath.files + configurations.testCompileClasspath.files)
+                        .findAll { it.name.endsWith('.jar') }.collect { it.absolutePath }.unique()))
+        println "Exported ${destination}"
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'full'
+    }
+    // Keep diagnostics and source/resource decoding consistent on Windows.
+    jvmArgs "-Dfile.encoding=UTF-8", "-Dsun.jnu.encoding=UTF-8"
+    systemProperty "file.encoding", "UTF-8"
+}
+
+// 为可重复构建生成 Gradle Wrapper：gradle wrapper --gradle-version 8.14.3
+tasks.register('installWrapper', Wrapper) {
+    gradleVersion = '8.14.3'
+    distributionType = Wrapper.DistributionType.BIN
+}

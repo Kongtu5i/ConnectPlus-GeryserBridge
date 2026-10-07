@@ -1,0 +1,31 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'dev.connectplus'
+version = '1.0.0'
+description = 'Mock ConnectPlus: a ViaProxy plugin emulating the bridge counterpart for local integration testing'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 本地下载的 ViaProxy 发布 JAR（仅编译期；README 记录下载方式）
+    compileOnly files('libs/ViaProxy-3.4.13.jar')
+}
+
+jar {
+    archiveBaseName = 'mock-ConnectPlus'
+}

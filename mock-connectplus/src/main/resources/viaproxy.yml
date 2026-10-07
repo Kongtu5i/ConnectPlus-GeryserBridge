@@ -1,0 +1,4 @@
+name: ConnectPlus
+main: dev.connectplus.mockconnectplus.MockConnectPlusPlugin
+author: ConnectPlus
+version: 1.0.0-mock
