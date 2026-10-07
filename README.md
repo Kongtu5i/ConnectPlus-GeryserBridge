@@ -1,53 +1,111 @@
 # ConnectPlus-GeyserBridge
 
-独立 Geyser 扩展，为同一个 ViaProxy 进程中的 ConnectPlus 提供可信 XUID、精确 TCP 连接绑定和定向断开。
+ConnectPlus 的基岩版身份桥接扩展，适用于同时运行 ConnectPlus 和 Geyser-ViaProxy 的 ViaProxy 服务器。
 
-**当前及后续功能均使用未修改的官方 ViaProxy、Geyser-ViaProxy。** 约束见 [AGENTS.md](AGENTS.md)，双方接口见 [协议](docs/geyser-bridge-v1.md)。旧补丁版验收包已废弃。当前版本 1.0.1，真人客户端验收尚未完成，建议作为预发布版使用。
+它把 Geyser 验证过的 Xbox 玩家身份交给 ConnectPlus，并将身份对应到正确的玩家连接。玩家档案、书签、Java 账号关联和解绑由 ConnectPlus 管理。
 
-## 构建
+## 运行要求
 
-需要 Java 21 或更高版本。依赖由 Gradle 下载，无需准备本地 ViaProxy JAR。
+| 组件 | 要求 |
+| --- | --- |
+| Java | 21 或更高版本 |
+| ViaProxy | 官方 3.4.x，最低 3.4.13 |
+| Geyser-ViaProxy | 官方 2.11.x，最低 2.11.3 |
+| ConnectPlus | 0.1.0（包含基岩桥接功能） |
 
-```powershell
-.\gradlew.bat jar test exportVerificationClasspath
-```
+ConnectPlus 与 Geyser-ViaProxy 必须安装在同一个 ViaProxy 实例中。本扩展使用未修改的官方宿主，仅适用于 Geyser-ViaProxy 部署方式。
 
-Windows 测试 worker 遇到中文路径类加载问题时，单独执行 `.\gradlew.bat jar exportVerificationClasspath`，再运行 `python scripts/verify-local.py`（需要 Python 3.10+）。产物为 `build/libs/connectplus-geyserbridge-1.0.1.jar`。编译依赖的 SHA-256 锁用于核对构建输入；运行时不锁 Git 提交或宿主 JAR 校验值。依赖含 SNAPSHOT，全新环境若下载到变化后的字节会拒绝构建，不应跳过校验。
+## 安装
 
-## 安装与配置
+1. 安装 ViaProxy，将 ConnectPlus 和 Geyser-ViaProxy 放入 `plugins/`。
+2. 启动一次 ViaProxy，生成插件配置文件，然后关闭服务器。
+3. 将 `connectplus-geyserbridge-1.0.1.jar` 放入 `plugins/Geyser/extensions/`；目录不存在时手动创建。
+4. 按下方说明修改配置，再启动 ViaProxy。
+
+目录结构如下，路径相对于 ViaProxy 的运行目录：
 
 ```text
 ViaProxy/
-  viaproxy.jar
-  plugins/
-    ConnectPlus-0.1.0.jar
-    Geyser-ViaProxy.jar
-    Geyser/
-      config.yml
-      extensions/
-        connectplus-geyserbridge-1.0.1.jar
+├── viaproxy.jar
+└── plugins/
+    ├── ConnectPlus-0.1.0.jar
+    ├── Geyser-ViaProxy.jar
+    ├── ConnectPlus/
+    │   └── config.yml
+    └── Geyser/
+        ├── config.yml
+        └── extensions/
+            └── connectplus-geyserbridge-1.0.1.jar
 ```
 
-ConnectPlus：`mode: lobby`、`geyser-support.enabled: true`、`allowAccountLogin: true`。
-Geyser：启用 `advanced.bedrock.validate-bedrock-login`，关闭 `use-waterdogpe-forwarding`，认证类型不得为 FLOODGATE。
-连接端口以宿主配置为准。首次启动需等待 Minecraft 素材下载完成。
+桥接 JAR 应放在 **Geyser 的 `extensions/` 目录**。
 
-## 能力与兼容性
+## 配置
 
-扩展通过检查后注册 `verified-xuid`、`exact-channel-binding`、`targeted-disconnect`。ConnectPlus 接受这三项能力，不要求重复登录准入能力。
+修改现有配置中的对应字段，保留其他设置。
 
-同一 Xbox XUID 两台基岩客户端重复登录时，保留 Geyser 原生行为：旧客户端继续在线，新连接被拒绝。已绑定 Java 档案的 Java/基岩互斥登录、书签、关联和解绑仍由 ConnectPlus 管理。
+### ConnectPlus
 
-当前允许尝试的运行范围：Geyser 2.11.x（最低 2.11.3）、ViaProxy 3.4.x（最低 3.4.13）、Java 21+，还必须通过适配器接口探测与认证配置检查。实际验收基线是官方 Geyser 2.11.3 build 1247 / ViaProxy 3.4.13 / Java 21；同系列未来版本的探测通过不等于已完成客户端兼容验收。新系列只审查和更新桥接适配器，不修改宿主。
+文件：`plugins/ConnectPlus/config.yml`
 
-精确连接匹配仍需读取 Geyser 内部下游连接，因此不能承诺任意未来版本自动兼容。内部访问隔离在 `adapter/GeyserViaProxyAdapter.java`，不匹配时停用桥接。
+```yaml
+mode: lobby
+allowAccountLogin: true
 
-## 验证
+geyser-support:
+  enabled: true
+```
 
-桥接的 36 项 JUnit 测试覆盖版本判断、XUID、地址、会话索引和请求处理。此前官方宿主启动检查已验证扩展加载、三项能力注册、Java TCP 入口、基岩 RakNet UDP 响应、素材加载和正常关闭。
+`mode: lobby` 启用 ConnectPlus 大厅，`geyser-support.enabled` 开启基岩身份桥接，`allowAccountLogin` 允许玩家使用微软 Java 账号登录功能。
 
-真实 ConnectPlus 全量测试及真人客户端验收需分别记录。自动检查不能代替真人验收；当前真人客户端验收尚未完成。
+### Geyser-ViaProxy
 
-源码仓库保留正式扩展、单元测试、构建工具和协议文档。安装时只需真实 ConnectPlus、官方 Geyser-ViaProxy 和本扩展，无需模拟插件。
+文件：`plugins/Geyser/config.yml`
 
-项目目前未声明源码许可证。
+```yaml
+java:
+  auth-type: offline
+
+advanced:
+  bedrock:
+    validate-bedrock-login: true
+    use-waterdogpe-forwarding: false
+```
+
+上述配置让 Java 账号登录由 ConnectPlus 处理。`auth-type: offline` 指 Geyser 的 Java 下游认证方式，基岩玩家仍须通过 Xbox 身份验证；请保持 `validate-bedrock-login: true`。
+
+本扩展不支持 Floodgate 认证模式或 WaterdogPE 身份转发。
+
+## 连接与使用
+
+启动后，在控制台中查找：
+
+```text
+registered with ConnectPlus (bridge capabilities:
+```
+
+出现这段日志表示桥接已成功接入 ConnectPlus。首次启动时，请等待 Geyser 完成 Minecraft 素材下载和加载。
+
+基岩玩家在 Minecraft 中登录 Xbox 账号，添加服务器，填写 ViaProxy 所在机器的地址及 **Geyser 配置中的基岩端口**。基岩连接使用 UDP，跨机器访问时需要放行该端口。
+
+进入后，通过 ConnectPlus 大厅使用书签、连接服务器或关联 Java 账号。Java 玩家连接 ViaProxy 的 Java TCP 端口。
+
+## 重复登录行为
+
+- **同一个 Xbox 账号在两台基岩客户端登录**：原客户端保持在线，新连接由 Geyser 拒绝。
+- **基岩账号已关联 Java 档案**：Java 与基岩客户端对同一档案的登录互斥由 ConnectPlus 管理。
+
+## 常见问题
+
+| 现象 | 检查方法 |
+| --- | --- |
+| 桥接没有加载 | 确认 JAR 位于 `plugins/Geyser/extensions/`，并已重启 ViaProxy。 |
+| 日志出现 `ConnectPlus not found` | 确认真实 ConnectPlus 插件已安装，并在控制台中正常加载。 |
+| 日志出现 `bridge disabled` | 查看同一条日志中的原因，检查版本要求、Xbox 登录验证及认证配置。 |
+| ConnectPlus 拒绝桥接注册 | 确认 `geyser-support.enabled: true`，并使用带有基岩桥接功能的 ConnectPlus。 |
+| 基岩客户端无法连接 | 检查 Geyser 的监听地址、基岩端口及 UDP 防火墙或端口映射设置。 |
+| 大厅中的账号登录功能不可用 | 检查 ConnectPlus 的 `allowAccountLogin`，以及桥接是否成功注册。 |
+
+## 问题反馈
+
+请通过 [GitHub Issues](https://github.com/Kongtu5i/ConnectPlus-GeryserBridge/issues) 提交问题，并附上 Java、ViaProxy、Geyser-ViaProxy 和 ConnectPlus 的版本，以及相关错误日志。分享日志前请移除账号令牌、密码等敏感信息。
