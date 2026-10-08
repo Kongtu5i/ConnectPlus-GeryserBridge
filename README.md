@@ -109,3 +109,9 @@ registered with ConnectPlus (bridge capabilities:
 ## 问题反馈
 
 请通过 [GitHub Issues](https://github.com/Kongtu5i/ConnectPlus-GeryserBridge/issues) 提交问题，并附上 Java、ViaProxy、Geyser-ViaProxy 和 ConnectPlus 的版本，以及相关错误日志。分享日志前请移除账号令牌、密码等敏感信息。
+
+## 许可证
+
+本项目按 [GNU General Public License v3.0](LICENSE)（`GPL-3.0-only`）许可发布。
+
+Copyright (C) 2026 Kongtu5i.
