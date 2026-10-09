@@ -1,6 +1,6 @@
 # Geyser 扩展开发说明：ConnectPlus 身份桥接协议 v1
 
-更新：2026-10-05。状态：已实现的官方宿主桥接协议；真人验收尚未执行。
+更新：2026-10-09。状态：已实现的官方宿主桥接协议；真人验收尚未执行。
 
 本文可独立交给 Geyser 扩展开发者。ConnectPlus 侧实施文档见 [ConnectPlus 开发计划](../superpowers/plans/2026-10-02-bedrock-account-linking.md)。协议发生变更时，双方同步修改这两份文档；不得各自改变字段或调用顺序。
 
@@ -48,6 +48,8 @@ ViaProxy/
 ## 2. 开工前必须验证的两项能力
 
 先用锁定版本完成最小原型，再开发正式接口。记录 ViaProxy 版本、Geyser 版本及提交号、扩展版本、运行 JDK、认证配置。ConnectPlus 当前编译基线为 Java 17 / ViaProxy 3.4.13；这不是对任意 Geyser 版本的运行兼容保证。
+
+桥扩展 1.0.2 起，Geyser-ViaProxy 的版本门槛为 2.11.3 或更高版本，按主、次、补丁版本数字比较，不设 2.11.x 系列上限。2.12.x 及后续版本可进入只读接口能力检查；缺失所需接口、版本格式无法识别或认证配置不合要求时仍拒绝启用。ViaProxy 继续要求 3.4.x 且最低 3.4.13，桥扩展运行 JDK 继续要求 Java 21 或更高版本。编译依赖仍锁定 Geyser 2.11.3；通过版本门槛不等于完成新宿主的真人客户端验收。
 
 ### 2.1 精确关联 ViaProxy 连接
 
@@ -124,7 +126,7 @@ targeted-disconnect
 
 失败返回 status=REJECTED 和 reasonCode，取值为 DISABLED、UNSUPPORTED_PROTOCOL、UNSUPPORTED_RUNTIME、MISSING_CAPABILITY、PROVIDER_ALREADY_REGISTERED 或 INVALID_REQUEST。只允许一个提供者；同一 providerEpoch 重试也不能覆盖现有注册。扩展保存成功结果以避免重复注册。
 
-注册声明的 viaproxyVersion 必须与实际运行的 ViaProxy 版本一致。双方在各自适配层只读访问已加载宿主的公开 VERSION 字段；不得直接引用这个编译期常量，否则 Java 会将构建依赖的版本写入插件，造成升级后的误拒绝。真实版本不一致仍返回 UNSUPPORTED_RUNTIME，ConnectPlus 日志会显示 `Bedrock bridge declares host version ... but this process runs ...`。此处的运行版本读取修复只修改 ConnectPlus，不改变官方宿主或放宽桥接的受支持版本系列检查。
+注册声明的 viaproxyVersion 必须与实际运行的 ViaProxy 版本一致。双方在各自适配层只读访问已加载宿主的公开 VERSION 字段；不得直接引用这个编译期常量，否则 Java 会将构建依赖的版本写入插件，造成升级后的误拒绝。真实版本不一致仍返回 UNSUPPORTED_RUNTIME，ConnectPlus 日志会显示 `Bedrock bridge declares host version ... but this process runs ...`。此处的运行版本读取修复只修改 ConnectPlus，不改变官方宿主或放宽 ViaProxy 的受支持版本系列检查；Geyser 的最低版本门槛见第 2 节。
 
 扩展在 Geyser 初始化完成、ConnectPlus 可用后注册。若加载顺序导致暂不可用，使用有界的异步重试：每秒一次、最多 30 次；超时记录停用原因。ConnectPlus 不存在时只停用桥接，不使 Geyser 崩溃。热重载不属于 v1 的无感支持范围。
 

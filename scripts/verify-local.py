@@ -62,7 +62,7 @@ def main():
         return output
 
     main_classes = compile_sources("main", sorted((ROOT / "src/main/java").rglob("*.java")), host)
-    artifact = ROOT / "build/libs/connectplus-geyserbridge-1.0.1.jar"
+    artifact = ROOT / "build/libs/connectplus-geyserbridge-1.0.2.jar"
     pack(main_classes, artifact, ROOT / "src/main/resources")
     test_sources = sorted((ROOT / "src/test/java").rglob("*.java"))
     test_classes = compile_sources("test", test_sources + [ROOT / "scripts/TestRunner.java"], tests + [str(artifact)])

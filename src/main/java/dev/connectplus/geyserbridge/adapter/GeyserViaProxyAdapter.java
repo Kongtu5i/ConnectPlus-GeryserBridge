@@ -23,7 +23,7 @@ import java.util.List;
  *  - 仅接受下游连接存活中的会话；
  *  - 候选必须唯一，命中多个一律 NO_MATCH（快速重连/端口复用时宁可拒绝也不猜）。
  *
- * {@link #selfCheck()} 先检查受支持版本系列、宿主及 JDK，再反射探测内部 API；不匹配时桥接停用，
+ * {@link #selfCheck()} 先检查 Geyser 最低版本、ViaProxy 版本系列、宿主及 JDK，再只读探测内部 API；不匹配时桥接停用，
  * 绝不允许猜一个匹配结果。
  */
 public final class GeyserViaProxyAdapter {
