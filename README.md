@@ -10,16 +10,18 @@ ConnectPlus 的基岩版身份桥接扩展，适用于同时运行 ConnectPlus �
 | --- | --- |
 | Java | 21 或更高版本 |
 | ViaProxy | 官方 3.4.x，最低 3.4.13 |
-| Geyser-ViaProxy | 官方 2.11.x，最低 2.11.3 |
+| Geyser-ViaProxy | 官方 2.11.3 或更高版本（包括 2.12.x） |
 | ConnectPlus | 0.1.0（包含基岩桥接功能） |
 
 ConnectPlus 与 Geyser-ViaProxy 必须安装在同一个 ViaProxy 实例中。本扩展使用未修改的官方宿主，仅适用于 Geyser-ViaProxy 部署方式。
+
+Geyser 版本按主、次、补丁版本数字比较，不限定为 2.11.x。启动时仍须通过适配器接口探测与认证配置检查；缺失所需接口时停用桥接。
 
 ## 安装
 
 1. 安装 ViaProxy，将 ConnectPlus 和 Geyser-ViaProxy 放入 `plugins/`。
 2. 启动一次 ViaProxy，生成插件配置文件，然后关闭服务器。
-3. 将 `connectplus-geyserbridge-1.0.1.jar` 放入 `plugins/Geyser/extensions/`；目录不存在时手动创建。
+3. 将 `connectplus-geyserbridge-1.0.2.jar` 放入 `plugins/Geyser/extensions/`；目录不存在时手动创建。
 4. 按下方说明修改配置，再启动 ViaProxy。
 
 目录结构如下，路径相对于 ViaProxy 的运行目录：
@@ -35,7 +37,7 @@ ViaProxy/
     └── Geyser/
         ├── config.yml
         └── extensions/
-            └── connectplus-geyserbridge-1.0.1.jar
+            └── connectplus-geyserbridge-1.0.2.jar
 ```
 
 桥接 JAR 应放在 **Geyser 的 `extensions/` 目录**。

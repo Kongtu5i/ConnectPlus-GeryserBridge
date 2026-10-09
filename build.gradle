@@ -3,10 +3,10 @@ plugins {
 }
 
 group = 'dev.connectplus'
-version = '1.0.1'
+version = '1.0.2'
 description = 'ConnectPlus-GeyserBridge: trusted Bedrock identity bridge for ConnectPlus on Geyser-ViaProxy'
 
-// 与宿主进程同 JVM 运行。Geyser 2.11.x / ViaProxy 3.4.13 时代基线为 Java 21。
+// 与宿主进程同 JVM 运行。编译基线为 Geyser 2.11.3 / ViaProxy 3.4.13 / Java 21。
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)

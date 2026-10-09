@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Supported host series; exact build hashes are provenance, not runtime gates. */
+/** Minimum Geyser version and supported ViaProxy series; build hashes are not runtime gates. */
 public final class RuntimeCompatibility {
     private static final Pattern VERSION = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-[A-Za-z0-9][A-Za-z0-9._-]*)?(?: \\(git-[A-Za-z0-9._-]+\\))?$");
 
@@ -14,8 +14,8 @@ public final class RuntimeCompatibility {
     public static List<String> problems(String geyserVersion, String viaProxyVersion, int javaFeature,
                                         String platform) {
         List<String> problems = new ArrayList<>();
-        if (!inSeries(geyserVersion, 2, 11, 3)) {
-            problems.add("unsupported Geyser version: requires 2.11.x >= 2.11.3");
+        if (!atLeast(geyserVersion, 2, 11, 3)) {
+            problems.add("unsupported Geyser version: requires 2.11.3 or later");
         }
         if (!inSeries(viaProxyVersion, 3, 4, 13)) {
             problems.add("unsupported ViaProxy version: requires 3.4.x >= 3.4.13");
@@ -27,6 +27,22 @@ public final class RuntimeCompatibility {
             problems.add("Geyser must run on the VIAPROXY platform");
         }
         return List.copyOf(problems);
+    }
+
+    private static boolean atLeast(String value, int major, int minor, int minimumPatch) {
+        if (value == null) return false;
+        Matcher version = VERSION.matcher(value);
+        if (!version.matches()) return false;
+        try {
+            int actualMajor = Integer.parseInt(version.group(1));
+            int actualMinor = Integer.parseInt(version.group(2));
+            int actualPatch = Integer.parseInt(version.group(3));
+            return actualMajor > major
+                    || (actualMajor == major && (actualMinor > minor
+                    || (actualMinor == minor && actualPatch >= minimumPatch)));
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private static boolean inSeries(String value, int major, int minor, int minimumPatch) {

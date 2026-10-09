@@ -2,5 +2,5 @@ id: connectplus-geyserbridge
 name: ConnectPlus-GeyserBridge
 main: dev.connectplus.geyserbridge.ConnectPlusGeyserBridge
 api: 2.9.0
-version: 1.0.1
+version: 1.0.2
 authors: [Kongtu5i]
